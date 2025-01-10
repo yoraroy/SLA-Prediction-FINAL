@@ -1,0 +1,16 @@
+pandas==2.1.3
+numpy==1.26.2
+# re - Not Installed
+scikit-learn==1.3.2
+tensorflow==2.15.0
+tensorflow==2.15.0
+tensorflow==2.15.0
+tensorflow==2.15.0
+tensorflow==2.15.0
+joblib==1.3.2
+matplotlib==3.8.2
+PyQt5==5.15.11
+# sys - Not Installed
+# datetime - Not Installed
+# os - Not Installed
+# xml.etree.ElementTree - Not Installed
