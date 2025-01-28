@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 import pandas as pd
 from model.preprocessingtest import process_file, calculate_datetime_raw # Import the function from preprocessingtest.py
 from model.graphing_prtg import graphing_prtg
@@ -12,8 +12,11 @@ from io import StringIO, BytesIO
 from flask_cors import CORS
 import shutil
 import zipfile
+from natsort import natsorted
 
 app = Flask(__name__)
+# Enable CORS on the Flask app
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['UPLOAD_FOLDER'] = './uploads'
 app.config['PROCESSED_FOLDER'] = './processed'
 app.config['ALLOWED_EXTENSIONS'] = {'csv'}
@@ -148,8 +151,72 @@ def get_graphs():
     images = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith('.jpg')]
     return jsonify(images)  # Returning list of image paths or URLs
 
-# Enable CORS on the Flask app
-CORS(app, resources={r"/*": {"origins": "*"}})
+@app.route('/done', methods=['POST'])
+def done():
+    # Delete all files in 'uploads' folder
+    for file_name in os.listdir("uploads"):
+        file_path = os.path.join("uploads", file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    # Delete all files in 'processed' folder
+    for file_name in os.listdir("processed"):
+        file_path = os.path.join("processed", file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    # Delete specific files
+    shutil.rmtree("graphs_prtg", ignore_errors=True)
+    shutil.rmtree("graphs_prediction", ignore_errors=True)
+    if os.path.isfile("graphs_prtg.zip"):
+        os.remove("graphs_prtg.zip")
+    if os.path.isfile("graphs_prediction.zip"):
+        os.remove("graphs_prediction.zip")
+    return jsonify({"message": "Have a nice day! :)"})
+
+# Define paths for the image folders
+GRAPHS_PRTG_FOLDER = "./graphs_prtg"
+GRAPHS_PREDICTION_FOLDER = "./graphs_prediction"
+
+def get_images_by_type(folder_path):
+    """Groups images by type ('LINK' and 'NON-LINK') and applies natural sorting."""
+    images = {'LINK': [], 'NON-LINK': []}
+    if not os.path.exists(folder_path):
+        print(f"Folder not found: {folder_path}")
+        return images
+    try:
+        for file_name in os.listdir(folder_path):
+            if file_name.endswith(".jpg"):
+                if file_name.startswith("LINK"):
+                    images['LINK'].append(file_name)
+                elif file_name.startswith("NON-LINK"):
+                    images['NON-LINK'].append(file_name)
+        
+        # Apply natural sorting
+        images['LINK'] = natsorted(images['LINK'])
+        images['NON-LINK'] = natsorted(images['NON-LINK'])
+    except Exception as e:
+        print(f"Error reading folder {folder_path}: {e}")
+    return images
+
+@app.route('/api/images/<folder_type>', methods=['GET'])
+def get_images(folder_type):
+    """API to return images grouped by type for a specific folder."""
+    if folder_type == "graphs_prtg":
+        return jsonify(get_images_by_type(GRAPHS_PRTG_FOLDER))
+    elif folder_type == "graphs_prediction":
+        return jsonify(get_images_by_type(GRAPHS_PREDICTION_FOLDER))
+    else:
+        return jsonify({"error": "Invalid folder type"}), 400
+
+@app.route('/images/<folder_type>/<filename>', methods=['GET'])
+def serve_image(folder_type, filename):
+    """Serves an image file from the specified folder."""
+    folder_path = GRAPHS_PRTG_FOLDER if folder_type == "graphs_prtg" else GRAPHS_PREDICTION_FOLDER
+    return send_from_directory(folder_path, filename)
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -8,9 +8,12 @@
     "@testing-library/user-event": "^13.5.0",
     "ajv-keywords": "^5.1.0",
     "axios": "^1.7.9",
+    "postcss-loader": "^8.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-scripts": "5.0.1",
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -38,6 +41,9 @@
     ]
   },
   "devDependencies": {
-    "ajv": "^8.17.1"
+    "ajv": "^8.17.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.17"
   }
 }
